@@ -1,0 +1,102 @@
+services:
+  frontend:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
+        NEXT_PUBLIC_MAX_EVIDENCE_FILE_SIZE_MB: ${MAX_EVIDENCE_FILE_SIZE_MB:-15}
+        NEXT_PUBLIC_MAX_SEARCH_QUERY_LENGTH: ${MAX_SEARCH_QUERY_LENGTH:-500}
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
+      NEXT_PUBLIC_MAX_EVIDENCE_FILE_SIZE_MB: ${MAX_EVIDENCE_FILE_SIZE_MB:-15}
+      NEXT_PUBLIC_MAX_SEARCH_QUERY_LENGTH: ${MAX_SEARCH_QUERY_LENGTH:-500}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build: ./apps/api
+    ports: ["8001:8001"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://coldsync:change-me-locally@postgres:5432/coldsync}
+      CHROMA_HOST: ${CHROMA_HOST:-chromadb}
+      CHROMA_PORT: ${CHROMA_PORT:-8000}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
+      EVIDENCE_STORAGE_DIR: ${EVIDENCE_STORAGE_DIR:-/data/evidence}
+      MAX_EVIDENCE_FILE_SIZE_MB: ${MAX_EVIDENCE_FILE_SIZE_MB:-15}
+      HISTORICAL_CASE_DATASET_PATH: ${HISTORICAL_CASE_DATASET_PATH:-}
+      SBERT_MODEL_NAME: ${SBERT_MODEL_NAME:-sentence-transformers/all-MiniLM-L6-v2}
+      SBERT_BATCH_SIZE: ${SBERT_BATCH_SIZE:-32}
+      SBERT_DEVICE: ${SBERT_DEVICE:-auto}
+      CLIP_MODEL_NAME: ${CLIP_MODEL_NAME:-openai/clip-vit-base-patch32}
+      CLIP_DEVICE: ${CLIP_DEVICE:-auto}
+      CLIP_BATCH_SIZE: ${CLIP_BATCH_SIZE:-8}
+      HISTORICAL_IMAGE_STORAGE_DIR: ${HISTORICAL_IMAGE_STORAGE_DIR:-/data/historical_images}
+      SERPAPI_API_KEY: ${SERPAPI_API_KEY:-}
+      SERPAPI_DEFAULT_ENGINE: ${SERPAPI_DEFAULT_ENGINE:-google}
+      SERPAPI_DEFAULT_GL: ${SERPAPI_DEFAULT_GL:-in}
+      SERPAPI_DEFAULT_HL: ${SERPAPI_DEFAULT_HL:-en}
+      SERPAPI_TIMEOUT_SECONDS: ${SERPAPI_TIMEOUT_SECONDS:-15}
+      SERPAPI_MAX_RESULTS_PER_QUERY: ${SERPAPI_MAX_RESULTS_PER_QUERY:-10}
+      SERPAPI_MAX_QUERIES_PER_RUN: ${SERPAPI_MAX_QUERIES_PER_RUN:-6}
+      SERPAPI_MAX_QUERIES_PER_RESEARCH_RUN: ${SERPAPI_MAX_QUERIES_PER_RESEARCH_RUN:-6}
+      MAX_SEARCH_QUERY_LENGTH: ${MAX_SEARCH_QUERY_LENGTH:-500}
+      SERPAPI_MOCK_MODE: ${SERPAPI_MOCK_MODE:-false}
+      AGENT_MAX_ITERATIONS: ${AGENT_MAX_ITERATIONS:-5}
+      AGENT_MAX_ACTIONS_PER_ITERATION: ${AGENT_MAX_ACTIONS_PER_ITERATION:-3}
+      AGENT_MAX_SERPAPI_QUERIES: ${AGENT_MAX_SERPAPI_QUERIES:-10}
+      AGENT_MAX_RESULTS: ${AGENT_MAX_RESULTS:-50}
+      AGENT_MAX_HISTORICAL_SEARCHES: ${AGENT_MAX_HISTORICAL_SEARCHES:-5}
+      AGENT_MAX_IMAGE_SEARCHES: ${AGENT_MAX_IMAGE_SEARCHES:-5}
+      AGENT_MAX_TOTAL_ACTIONS: ${AGENT_MAX_TOTAL_ACTIONS:-20}
+      RESEARCH_RATE_LIMIT_PER_MINUTE: ${RESEARCH_RATE_LIMIT_PER_MINUTE:-5}
+      CHROMA_PERSIST_DIRECTORY: ${CHROMA_PERSIST_DIRECTORY:-/data/chroma}
+      HF_HOME: /models
+    volumes:
+      - evidence_data:/data/evidence
+      - ./data/historical_cases:/data/historical_cases:ro
+      - sbert_models:/models
+      - historical_image_data:/data/historical_images
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coldsync}
+      POSTGRES_USER: ${POSTGRES_USER:-coldsync}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:latest
+    ports: ["8000:8000"]
+    volumes: ["chroma_data:/chroma/chroma"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v2/heartbeat')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+  chroma_data:
+  evidence_data:
+  sbert_models:
+  historical_image_data:

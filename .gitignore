@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.next/
+node_modules/
+apps/api/uploads/
+data/chroma/
+data/evidence/
+data/historical_images/
+data/postgres/
+*.log
