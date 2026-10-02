@@ -12,6 +12,8 @@ from app.models.image_index import ImageIndexState
 from app.models.web_research import ResearchRun, ResearchSearch, WebSource, WebSearchResult, ResearchRunEvidence
 from app.models.agent import AgentRun, AgentAction
 from app.models.correlation import Correlation, CorrelationReview
+from app.models.timeline import TimelineEvent, TimelineEventSource, TimelineEventEvidence
+from app.models.geospatial import Location, TimelineEventLocation, EvidenceLocation, HistoricalCaseLocation, SourceLocation, Contradiction
 
 config = context.config
 if config.config_file_name:

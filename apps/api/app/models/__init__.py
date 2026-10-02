@@ -7,5 +7,7 @@ from app.models.image_index import ImageIndexState
 from app.models.web_research import ResearchRun, ResearchSearch, WebSource, WebSearchResult, ResearchRunEvidence
 from app.models.agent import AgentRun, AgentAction
 from app.models.correlation import Correlation, CorrelationReview
+from app.models.timeline import TimelineEvent, TimelineEventSource, TimelineEventEvidence
+from app.models.geospatial import Location, TimelineEventLocation, EvidenceLocation, HistoricalCaseLocation, SourceLocation, Contradiction
 
-__all__ = ["Investigation", "Evidence", "HistoricalCase", "VectorIndexState", "HistoricalCaseImage", "ImageIndexState", "ResearchRun", "ResearchSearch", "WebSource", "WebSearchResult", "ResearchRunEvidence", "AgentRun", "AgentAction", "Correlation", "CorrelationReview"]
+__all__ = ["Investigation", "Evidence", "HistoricalCase", "VectorIndexState", "HistoricalCaseImage", "ImageIndexState", "ResearchRun", "ResearchSearch", "WebSource", "WebSearchResult", "ResearchRunEvidence", "AgentRun", "AgentAction", "Correlation", "CorrelationReview", "TimelineEvent", "TimelineEventSource", "TimelineEventEvidence", "Location", "TimelineEventLocation", "EvidenceLocation", "HistoricalCaseLocation", "SourceLocation", "Contradiction"]

@@ -1,4 +1,4 @@
-import type { ApiEnvelope, CreateTextEvidenceRequest, Evidence, EvidenceHistoricalSearchResult, HistoricalCaseDetail, HistoricalImageSearchResult, HistoricalIndexStatus, Investigation, UpdateEvidenceRequest, ResearchRun, ResearchSearchType, ResearchSource, AgentRun, AgentAction, CorrelationRecord, CorrelationSummary, CorrelationRunResult, CorrelationReviewStatus } from "./types";
+import type { ApiEnvelope, CreateTextEvidenceRequest, Evidence, EvidenceHistoricalSearchResult, HistoricalCaseDetail, HistoricalImageSearchResult, HistoricalIndexStatus, Investigation, UpdateEvidenceRequest, ResearchRun, ResearchSearchType, ResearchSource, AgentRun, AgentAction, CorrelationRecord, CorrelationSummary, CorrelationRunResult, CorrelationReviewStatus, TimelineEvent, GeoLocation, GeoSummary, Contradiction } from "./types";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1";
 
@@ -65,4 +65,21 @@ export const api = {
   reviewCorrelation: (id: string, review_status: CorrelationReviewStatus, note?: string) => request<CorrelationRecord>(`/correlations/${encodeURIComponent(id)}/review`, { method: "PATCH", body: JSON.stringify({ review_status, note }) }),
   deleteCorrelation: (id: string) => request<void>(`/correlations/${encodeURIComponent(id)}`, { method: "DELETE"}),
   createManualCorrelation: (investigationId: string, data: { source_type: string; source_id: string; target_type: string; target_id: string; correlation_type: string; note: string }) => request<CorrelationRecord>(`/investigations/${encodeURIComponent(investigationId)}/correlations/manual`, { method: "POST", body: JSON.stringify(data) }),
+  timeline: (investigationId:string, filters:Record<string,string>={}) => { const q=new URLSearchParams(filters); return request<TimelineEvent[]>(`/investigations/${encodeURIComponent(investigationId)}/timeline${q.size?`?${q}`:""}`); },
+  generateTimeline: (investigationId:string,scope="ALL") => request<{status:string;scope:string;created:number;partial_sources:string[];events:TimelineEvent[]}>(`/investigations/${encodeURIComponent(investigationId)}/timeline/generate`,{method:"POST",body:JSON.stringify({scope})}),
+  createTimelineEvent: (investigationId:string,data:Record<string,unknown>) => request<TimelineEvent>(`/investigations/${encodeURIComponent(investigationId)}/timeline/events`,{method:"POST",body:JSON.stringify(data)}),
+  updateTimelineEvent: (id:string,data:Record<string,unknown>) => request<TimelineEvent>(`/timeline/events/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(data)}),
+  deleteTimelineEvent: (id:string) => request<void>(`/timeline/events/${encodeURIComponent(id)}`,{method:"DELETE"}),
+  timelineEvent: (id:string) => request<TimelineEvent>(`/timeline/events/${encodeURIComponent(id)}`),
+  geospatialLocations:(investigationId:string,filters:Record<string,string>={})=>{const q=new URLSearchParams(filters);return request<GeoLocation[]>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/locations${q.size?`?${q}`:""}`)},
+  geospatialSummary:(investigationId:string)=>request<GeoSummary>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/summary`),
+  geospatialHeatmap:(investigationId:string,filters:Record<string,string>={})=>{const q=new URLSearchParams(filters);return request<{mode:string;methodology:string;record_count:number;points:Array<{location_id:string;latitude:number;longitude:number;precision:string;raw_text:string;weight:number;record:import("./types").GeoRecord;conflicts:Array<{id:string;type:string;status:string;description:string}>}>;correlations:Array<{id:string;coordinates:[[number,number],[number,number]];source_location:string;target_location:string;explanation:string;score:number|null}>}>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/heatmap?${q}`)},
+  rebuildGeospatial:(investigationId:string)=>request<unknown>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/rebuild`,{method:"POST",body:JSON.stringify({})}),
+  geocodeLocations:(investigationId:string,limit=25)=>request<unknown>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/geocode`,{method:"POST",body:JSON.stringify({limit})}),
+  createGeoLocation:(investigationId:string,data:Record<string,unknown>)=>request<GeoLocation>(`/investigations/${encodeURIComponent(investigationId)}/geospatial/locations`,{method:"POST",body:JSON.stringify(data)}),
+  detectContradictions:(investigationId:string)=>request<{status:string;created:number;items:Contradiction[]}>(`/investigations/${encodeURIComponent(investigationId)}/contradictions/detect`,{method:"POST",body:JSON.stringify({})}),
+  contradictions:(investigationId:string,filters:Record<string,string>={})=>{const q=new URLSearchParams(filters);return request<Contradiction[]>(`/investigations/${encodeURIComponent(investigationId)}/contradictions${q.size?`?${q}`:""}`)},
+  contradiction:(id:string)=>request<Contradiction>(`/contradictions/${encodeURIComponent(id)}`),
+  reviewContradiction:(id:string,status:string,note?:string)=>request<Contradiction>(`/contradictions/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status,investigator_note:note})}),
+  deleteContradiction:(id:string)=>request<void>(`/contradictions/${encodeURIComponent(id)}`,{method:"DELETE"}),
 };

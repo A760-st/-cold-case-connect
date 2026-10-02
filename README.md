@@ -191,3 +191,31 @@ The product organizes research and preserves provenance. AI generated material m
 ## Development
 
 Proceed phase by phase. Inspect current implementation, implement a focused slice, run relevant checks, update documentation, and commit that slice. The later test plan should cover API routes, retrieval, provenance, analysis, and deterministic demo workflow.
+# Timeline Reconstruction
+
+The Phase 8 timeline stores source-backed event candidates for each investigation. Events retain their original date expression (`date_text`) alongside normalized inclusive `date_start`/`date_end` bounds and a precision label (`EXACT`, `DAY`, `MONTH`, `YEAR`, `RANGE`, `APPROXIMATE`, or `UNKNOWN`). Month and year bounds support ordering; the UI displays the original precision and wording rather than implying a specific day.
+
+Generation currently includes the investigation creation date and extracts explicit dates in investigator evidence, completed historical text search agent outputs, and stored web, news, and image search result snippets. Historical events are limited to cases returned by actual persisted agent searches. Publication dates are retained separately from event dates and are never promoted to event dates. Matching title and date candidates from different sources share an event and retain source/evidence links; uncertain matches remain separate. Identical titles with differing dates are shown as date variance notices requiring verification. Manual events are investigator attributed and may be reviewed, dismissed, edited, or deleted independently of their source material. Correlations appear as contextual links only.
+
+The current Phase 3 standalone historical search returns transient retrieval results. Only persisted completed historical text search agent outputs can supply historical cases to timeline generation; standalone search results are not included. Agent web results follow the same dated-snippet extraction rules. Automatic importance is the neutral `MEDIUM` default.
+
+Timeline order does not establish causality. Extracted events are research organization aids, not investigator-confirmed facts or findings about identity or guilt.
+
+API endpoints:
+
+* `POST /api/v1/investigations/{investigation_id}/timeline/generate` (`scope`: `ALL`, `EVIDENCE`, `HISTORICAL`, `WEB`, `NEWS`)
+* `GET /api/v1/investigations/{investigation_id}/timeline` (event/date/source/status filters and `q` search)
+* `POST /api/v1/investigations/{investigation_id}/timeline/events`
+* `GET /api/v1/timeline/events/{event_id}`
+* `PATCH /api/v1/timeline/events/{event_id}`
+* `DELETE /api/v1/timeline/events/{event_id}`
+
+Apply Alembic migration `0008_timeline_engine` before using the timeline APIs.
+
+## Geospatial Intelligence and Contradiction Review
+
+Phase 9 stores raw location text and a separately normalized search key. Coordinates are only retained when provided by a source, entered by an investigator, or returned by the configured geocoder. Location precision and geocoding source/status remain visible; approximate reports are shown as approximate areas. Geocoding is disabled by default (`GEOCODING_ENABLED=false`); enabling Nominatim uses a configured User-Agent, timeout, and request rate limit. Provider failures leave the source text intact and do not generate coordinates.
+
+The investigation map layers evidence, timeline entries, historical cases, web/news sources, and investigator-added locations. Date, precision, and conflict filters apply to location records; heatmap modes count each mapped record once. The density display is a record count and does not represent crime or risk probability. Location detail retains provenance and links to the underlying record/source. Deterministic contradiction detection currently flags differing explicit dates and locations for matched timeline/evidence records and differing explicit evidence attributes. It records both values and source references without selecting a winner; investigators can mark a finding for verification, reviewed, resolved, or dismissed.
+
+Phase 9 APIs are under `/api/v1/investigations/{investigation_id}/geospatial/` (`locations`, `heatmap`, `summary`, `rebuild`, `geocode`) and `/api/v1/investigations/{investigation_id}/contradictions` (`detect`, list), with individual contradiction retrieval/review at `/api/v1/contradictions/{contradiction_id}`. Apply Alembic migration `0009_geospatial_contradictions` after migration 0008.

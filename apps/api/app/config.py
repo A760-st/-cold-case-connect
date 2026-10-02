@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     agent_max_historical_searches: int = Field(default=5, ge=0, le=20)
     agent_max_image_searches: int = Field(default=5, ge=0, le=20)
     agent_max_total_actions: int = Field(default=20, ge=1, le=100)
+    geocoding_provider: str = "nominatim"
+    geocoding_enabled: bool = False
+    geocoding_timeout_seconds: float = Field(default=5, ge=1, le=30)
+    geocoding_user_agent: str = "ColdSyncAI/0.1 (geospatial research tool)"
+    geocoding_rate_limit: int = Field(default=1, ge=1, le=10)
 
     @field_validator("sbert_device")
     @classmethod
