@@ -9,5 +9,8 @@ from app.models.agent import AgentRun, AgentAction
 from app.models.correlation import Correlation, CorrelationReview
 from app.models.timeline import TimelineEvent, TimelineEventSource, TimelineEventEvidence
 from app.models.geospatial import Location, TimelineEventLocation, EvidenceLocation, HistoricalCaseLocation, SourceLocation, Contradiction
+from app.models.research_intelligence import ResearchGap, InvestigationQuestion
+from app.models.investigation_graph import Claim, SourceRelationship, GraphNote, GraphBookmark
+from app.models.investigation_synthesis import InvestigationSynthesis, InvestigationSynthesisReview
 
-__all__ = ["Investigation", "Evidence", "HistoricalCase", "VectorIndexState", "HistoricalCaseImage", "ImageIndexState", "ResearchRun", "ResearchSearch", "WebSource", "WebSearchResult", "ResearchRunEvidence", "AgentRun", "AgentAction", "Correlation", "CorrelationReview", "TimelineEvent", "TimelineEventSource", "TimelineEventEvidence", "Location", "TimelineEventLocation", "EvidenceLocation", "HistoricalCaseLocation", "SourceLocation", "Contradiction"]
+__all__ = ["Investigation", "Evidence", "HistoricalCase", "VectorIndexState", "HistoricalCaseImage", "ImageIndexState", "ResearchRun", "ResearchSearch", "WebSource", "WebSearchResult", "ResearchRunEvidence", "AgentRun", "AgentAction", "Correlation", "CorrelationReview", "TimelineEvent", "TimelineEventSource", "TimelineEventEvidence", "Location", "TimelineEventLocation", "EvidenceLocation", "HistoricalCaseLocation", "SourceLocation", "Contradiction", "ResearchGap", "InvestigationQuestion", "Claim", "SourceRelationship", "GraphNote", "GraphBookmark", "InvestigationSynthesis", "InvestigationSynthesisReview"]

@@ -1,0 +1,11 @@
+PROMPT_VERSION = "phase12-v1"
+DEFAULT_MODEL = "gemini-2.0-flash-lite"
+SUPPORTED_STATUS_VALUES = {
+    "QUEUED",
+    "BUILDING_CONTEXT",
+    "GENERATING",
+    "VALIDATING",
+    "COMPLETED",
+    "FAILED",
+    "SUPERSEDED",
+}

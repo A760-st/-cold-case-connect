@@ -42,6 +42,15 @@ class Settings(BaseSettings):
     geocoding_timeout_seconds: float = Field(default=5, ge=1, le=30)
     geocoding_user_agent: str = "ColdSyncAI/0.1 (geospatial research tool)"
     geocoding_rate_limit: int = Field(default=1, ge=1, le=10)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash-lite"
+    gemini_timeout_seconds: float = Field(default=20, ge=1, le=120)
+    gemini_max_output_tokens: int = Field(default=1024, ge=64, le=32768)
+    gemini_temperature: float = Field(default=0.2, ge=0.0, le=1.0)
+    gemini_max_context_tokens: int = Field(default=120000, ge=1024, le=2000000)
+    gemini_max_retries: int = Field(default=2, ge=0, le=5)
+    gemini_enabled: bool = True
+    gemini_mock_mode: bool = False
 
     @field_validator("sbert_device")
     @classmethod

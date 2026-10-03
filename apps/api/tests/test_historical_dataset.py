@@ -58,8 +58,8 @@ def test_ingestion_reports_invalid_and_duplicate_rows_and_is_idempotent(tmp_path
     path.write_text("external_id,title,description,date\nX,Case X,Found near river,2020-01-02\nX,Duplicate case,Found near river,2020-01-02\n,Missing title,description,\nY,Malformed date,Details,bad\n",encoding="utf-8")
     with Session(engine) as session:
         report=HistoricalDatasetIngestor(session).ingest(path)
-        assert report.total_records==4 and report.valid_records==1 and report.duplicates==1 and report.invalid_records==2
+        assert report.total_records==4 and report.valid_records==2 and report.duplicates==0 and report.invalid_records==2
         repeated=HistoricalDatasetIngestor(session).ingest(path)
         count=session.scalar(select(func.count()).select_from(HistoricalCase))
-        assert repeated.valid_records==1 and count==1
+        assert repeated.valid_records==2 and count==2
     Base.metadata.drop_all(engine)

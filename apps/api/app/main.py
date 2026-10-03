@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 import httpx
@@ -27,6 +28,9 @@ from app.agents.agent_service import AgentServiceError
 from app.api.routes.correlations import router as correlations_router
 from app.api.routes.timeline import router as timeline_router
 from app.api.routes.geospatial import router as geospatial_router
+from app.api.routes.investigation_graph import router as investigation_graph_router
+from app.api.routes.research_intelligence import router as research_intelligence_router
+from app.api.routes.synthesis import router as synthesis_router
 from app.correlation.service import CorrelationError
 from app.correlation.rules import RULES
 
@@ -64,14 +68,20 @@ def api_health() -> dict:
     if serp_status == "IDLE":
         serp_status = "AVAILABLE"
     geospatial = {"status": "UNKNOWN", "locations": None, "mapped_locations": None, "heatmap_records": None, "contradictions": None, "open_contradictions": None}
+    research_intelligence = {"research_gap_count": None, "open_research_gaps": None, "research_questions": None}
+    graph_status={"node_count":None,"edge_count":None,"last_rebuild":None,"build_duration_ms":None,"cache_status":"ON_DEMAND_RELATIONAL_PROJECTION","orphaned_node_count":None,"orphaned_edge_count":None,"errors":None}
     try:
         from sqlalchemy import func, select
         from app.models.geospatial import Location, Contradiction, ContradictionStatus
+        from app.models.research_intelligence import ResearchGap, ResearchGapStatus, InvestigationQuestion
+        from app.models.investigation_graph import Claim, SourceRelationship, GraphNote
         with SessionLocal() as db:
-            geospatial.update({"status": "ENABLED" if settings.geocoding_enabled else "DISABLED", "locations": db.scalar(select(func.count(Location.id))) or 0, "mapped_locations": db.scalar(select(func.count(Location.id)).where(Location.latitude.is_not(None), Location.longitude.is_not(None))) or 0, "heatmap_records": db.scalar(select(func.count(Location.id)).where(Location.latitude.is_not(None), Location.longitude.is_not(None))) or 0, "contradictions": db.scalar(select(func.count(Contradiction.id))) or 0, "open_contradictions": db.scalar(select(func.count(Contradiction.id)).where(Contradiction.status.in_([ContradictionStatus.OPEN, ContradictionStatus.REQUIRES_VERIFICATION]))) or 0})
+            geospatial.update({"status": "ENABLED" if settings.geocoding_enabled else "DISABLED", "locations": db.scalar(select(func.count(Location.id))) or 0, "mapped_locations": db.scalar(select(func.count(Location.id)).where(Location.latitude.is_not(None), Location.longitude.is_not(None))) or 0, "heatmap_records": db.scalar(select(func.count(Location.id)).where(Location.latitude.is_not(None), Location.longitude.is_not(None))) or 0, "contradictions": db.scalar(select(func.count(Contradiction.id))) or 0, "open_contradictions": db.scalar(select(func.count(Contradiction.id)).where(Contradiction.status.in_([ContradictionStatus.OPEN, ContradictionStatus.UNDER_REVIEW, ContradictionStatus.REQUIRES_VERIFICATION]))) or 0})
+            research_intelligence.update({"research_gap_count": db.scalar(select(func.count(ResearchGap.id))) or 0, "open_research_gaps": db.scalar(select(func.count(ResearchGap.id)).where(ResearchGap.status.in_([ResearchGapStatus.OPEN, ResearchGapStatus.RESEARCHING]))) or 0, "research_questions": db.scalar(select(func.count(InvestigationQuestion.id))) or 0})
+            graph_status.update({"claim_count":db.scalar(select(func.count(Claim.id))) or 0,"source_relationship_count":db.scalar(select(func.count(SourceRelationship.id))) or 0,"investigator_note_count":db.scalar(select(func.count(GraphNote.id))) or 0,"status":"ON_DEMAND_RELATIONAL_PROJECTION"})
     except SQLAlchemyError:
         logger.exception("Geospatial health metrics unavailable")
-    return {"success": True, "data": {"status": status, "service": "coldsync-api", "database": database, "historical_case_count": text_index["historical_case_count"], "vector_index_status": text_index["status"], "vector_index_count": text_index["vector_index_count"], "embedding_model": text_index["embedding_model"], "historical_text_index": {"status": text_index["status"], "count": text_index["vector_index_count"]}, "historical_image_index": {"status": image_index["status"], "count": image_index["vector_index_count"]}, "clip_model": settings.clip_model_name, "serpapi": {"configured": bool(settings.serpapi_api_key), "status": serp_status, "mock_mode": settings.serpapi_mock_mode}, "agent": {"available": True, "planner": "deterministic", "llm_available": False, "max_iterations": settings.agent_max_iterations, "max_serpapi_queries": settings.agent_max_serpapi_queries}, "correlation_engine": {"available": True, "rules_enabled": len(RULES), "semantic_engine": text_index["status"] == "READY", "visual_engine": image_index["status"] == "READY"}, "geospatial": geospatial}}
+    return {"success": True, "data": {"status": status, "service": "coldsync-api", "database": database, "historical_case_count": text_index["historical_case_count"], "vector_index_status": text_index["status"], "vector_index_count": text_index["vector_index_count"], "embedding_model": text_index["embedding_model"], "historical_text_index": {"status": text_index["status"], "count": text_index["vector_index_count"]}, "historical_image_index": {"status": image_index["status"], "count": image_index["vector_index_count"]}, "clip_model": settings.clip_model_name, "serpapi": {"configured": bool(settings.serpapi_api_key), "status": serp_status, "mock_mode": settings.serpapi_mock_mode}, "agent": {"available": True, "planner": "deterministic", "llm_available": False, "max_iterations": settings.agent_max_iterations, "max_serpapi_queries": settings.agent_max_serpapi_queries}, "correlation_engine": {"available": True, "rules_enabled": len(RULES), "semantic_engine": text_index["status"] == "READY", "visual_engine": image_index["status"] == "READY"}, "geospatial": geospatial, "research_intelligence": research_intelligence,"graph":graph_status}}
 
 
 @api.post("/investigations", status_code=201)
@@ -116,6 +126,9 @@ app.include_router(agent_router)
 app.include_router(correlations_router)
 app.include_router(timeline_router)
 app.include_router(geospatial_router)
+app.include_router(research_intelligence_router)
+app.include_router(investigation_graph_router)
+app.include_router(synthesis_router)
 
 
 @app.exception_handler(HTTPException)
@@ -161,9 +174,11 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     return JSONResponse(status_code=422, content={"success": False, "error": {"code": "VALIDATION_ERROR", "message": "The request contains invalid or missing fields."}})
 
 
-@app.exception_handler(404)
+@app.exception_handler(StarletteHTTPException)
 async def route_not_found_handler(request: Request, exc):
-    return JSONResponse(status_code=404, content={"success": False, "error": {"code": "NOT_FOUND", "message": "The requested resource was not found."}})
+    code = exc.detail if isinstance(exc.detail, str) else "NOT_FOUND"
+    messages = {"INVESTIGATION_NOT_FOUND": "Investigation was not found.", "EVIDENCE_NOT_FOUND": "Evidence was not found."}
+    return JSONResponse(status_code=exc.status_code, content={"success": False, "error": {"code": code, "message": messages.get(code, "The requested resource was not found.")}})
 
 
 @app.get("/health")

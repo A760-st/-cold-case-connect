@@ -14,6 +14,8 @@ from app.models.agent import AgentRun, AgentAction
 from app.models.correlation import Correlation, CorrelationReview
 from app.models.timeline import TimelineEvent, TimelineEventSource, TimelineEventEvidence
 from app.models.geospatial import Location, TimelineEventLocation, EvidenceLocation, HistoricalCaseLocation, SourceLocation, Contradiction
+from app.models.research_intelligence import ResearchGap, InvestigationQuestion
+from app.models.investigation_graph import Claim, SourceRelationship, GraphNote, GraphBookmark
 
 config = context.config
 if config.config_file_name:

@@ -18,6 +18,11 @@ services:
   backend:
     build: ./apps/api
     ports: ["8001:8001"]
+    env_file:
+      - path: .env.example
+        required: false
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://coldsync:change-me-locally@postgres:5432/coldsync}
       CHROMA_HOST: ${CHROMA_HOST:-chromadb}
@@ -25,7 +30,6 @@ services:
       API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
       EVIDENCE_STORAGE_DIR: ${EVIDENCE_STORAGE_DIR:-/data/evidence}
       MAX_EVIDENCE_FILE_SIZE_MB: ${MAX_EVIDENCE_FILE_SIZE_MB:-15}
-      HISTORICAL_CASE_DATASET_PATH: ${HISTORICAL_CASE_DATASET_PATH:-}
       SBERT_MODEL_NAME: ${SBERT_MODEL_NAME:-sentence-transformers/all-MiniLM-L6-v2}
       SBERT_BATCH_SIZE: ${SBERT_BATCH_SIZE:-32}
       SBERT_DEVICE: ${SBERT_DEVICE:-auto}
@@ -89,7 +93,7 @@ services:
     ports: ["8000:8000"]
     volumes: ["chroma_data:/chroma/chroma"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v2/heartbeat')"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8000"]
       interval: 10s
       timeout: 3s
       retries: 10

@@ -348,7 +348,7 @@ class CorrelationService:
                     {"method": "TOKEN_OVERLAP", "shared_terms": overlap, "research_run_id": str(result.research_run_id), "search_id": str(result.search_id), "source_id": str(result.source_id) if result.source_id else None, "url": result.url, "requires_verification": True})
 
     def _upsert(self, investigation_id, source_id, source_type, target_id, target_type, correlation_type, score, explanation, supporting_attributes, evidence_basis):
-        source_type, target_type, source_id, target_id = self._canonical(source_type, target_type, source_id, target_id)
+        source_type, source_id, target_type, target_id = self._canonical(source_type, target_type, source_id, target_id)
         row = self.db.scalar(select(Correlation).where(Correlation.investigation_id == investigation_id, Correlation.source_type == source_type,
             Correlation.source_id == source_id, Correlation.target_type == target_type, Correlation.target_id == target_id,
             Correlation.correlation_type == correlation_type))
@@ -422,7 +422,7 @@ class CorrelationService:
         return self.detail(row.id)
 
     def _get_pair(self, investigation_id, st, si, tt, ti, kind):
-        st, tt, si, ti = self._canonical(st, tt, si, ti)
+        st, si, tt, ti = self._canonical(st, tt, si, ti)
         return self.db.scalar(select(Correlation).where(Correlation.investigation_id == investigation_id, Correlation.source_type == st, Correlation.source_id == si,
             Correlation.target_type == tt, Correlation.target_id == ti, Correlation.correlation_type == kind))
 

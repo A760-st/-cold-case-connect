@@ -69,6 +69,14 @@ Semantic similarity is a retrieval signal only. Search results remain potentiall
 
 Phase 4 adds `CLIP_MODEL_NAME`, `CLIP_DEVICE`, `CLIP_BATCH_SIZE`, and `HISTORICAL_IMAGE_STORAGE_DIR`. Dataset image paths must resolve within the dataset directory. Image URLs are provenance references and are not fetched. CLIP and SBERT retrieval stay separate; no cross-modal score is produced.
 
+## Research intelligence and graph
+
+Phase 10 extends contradiction detection and adds research gaps/questions using the relational records that power timeline and geospatial panels. Phase 11 composes a bounded graph response from investigation-scoped database queries rather than maintaining a second graph store. Evidence/source/run records remain authoritative in their existing tables; claims, source relationship review, notes, and saved graph views are persisted as graph-specific records.
+
+The graph is filtered and paginated at the API boundary. Relationship categories distinguish provenance, analysis, conflict, research, and investigator input. Relationships with polymorphic IDs are emitted only when both endpoint records have been loaded from the current investigation; the projection does not create placeholder nodes from unvalidated IDs. Notes and bookmarks are scoped to an investigation. See [graph.md](graph.md), [provenance.md](provenance.md), and [api.md](api.md).
+
+Migrations 0010 and 0011 extend contradictions, add research gaps/questions, then add graph-specific claims, source relationships, notes, and bookmarks. Compose applies the ordered migration chain on backend startup.
+
 ## Current limits
 
 No historical dataset or historical image corpus is bundled. Visual similarity is a retrieval signal only and does not establish identity or prove two images depict the same subject. Public web results are source leads and require investigator review. Phase 6 uses a deterministic planner; Phase 7 correlation rules are deterministic and bounded. Correlation is a research lead, not proof. Entity extraction is conservative (formatted dates/IDs and explicitly labeled entities/metadata), and only Bangalore/Bengaluru are configured as a location alias. Direct Phase 3/4 search results are not persisted outside agent action traces. Correlation generation caps inputs and records per run; counts and truncation are returned by the run endpoint. Investigator feedback does not train a model. The application has no authentication/ownership layer. Neither phase includes Gemini synthesis, cross-modal scoring, or automated investigative conclusions. Agent tasks run in API background workers, so process restarts interrupt in-flight work; persisted run state and action trace remain available.

@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 
 import pytest
@@ -100,10 +101,10 @@ def test_agent_semantic_match_is_persisted_and_deduplicated(client):
     session = TestingSession()
     case = HistoricalCase(fingerprint="c" * 64, title="Historic warehouse incident", text_content="Historical detail")
     session.add(case); session.flush()
-    run = AgentRun(investigation_id=investigation_id, objective="Find related cases", status=AgentRunStatus.COMPLETED,
+    run = AgentRun(investigation_id=UUID(investigation_id), objective="Find related cases", status=AgentRunStatus.COMPLETED,
         max_iterations=2, max_actions=5, max_serpapi_queries=2, actions_completed=1, metadata_json={})
     session.add(run); session.flush()
-    action = AgentAction(investigation_id=investigation_id, agent_run_id=run.id, iteration=1, sequence_number=1,
+    action = AgentAction(investigation_id=UUID(investigation_id), agent_run_id=run.id, iteration=1, sequence_number=1,
         action_type=AgentActionType.SEARCH_HISTORICAL_TEXT, status=AgentActionStatus.COMPLETED,
         input_payload={"evidence_ids": [evidence["id"]]}, output_summary={"matches": [{"historical_case_id": str(case.id), "similarity_score": 0.84}]}, reason="SBERT retrieval")
     session.add(action); session.commit(); session.close()
